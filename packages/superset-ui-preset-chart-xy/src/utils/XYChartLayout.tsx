@@ -10,10 +10,10 @@ import computeYAxisLayout from './computeYAxisLayout';
 import createTickComponent from './createTickComponent';
 import getTickLabels from './getTickLabels';
 import ChartFrame from '../components/ChartFrame';
-import isEnabled from '../encodeable/utils/isEnabled';
 import ChannelEncoder from '../encodeable/ChannelEncoder';
-import { XFieldDef, YFieldDef } from '../encodeable/types/fielddef';
-import { PlainObject } from '../encodeable/types/data';
+import { XFieldDef, YFieldDef } from '../encodeable/types/FieldDef';
+import { XAxis as XAxisConfig } from '../encodeable/types/Axis';
+import { PlainObject } from '../encodeable/types/Data';
 
 // Additional margin to avoid content hidden behind scroll bar
 const OVERFLOW_MARGIN = 8;
@@ -53,6 +53,7 @@ export default class XYChartLayout {
     orientation: string;
   };
 
+  // eslint-disable-next-line complexity
   constructor(spec: Input) {
     this.spec = spec;
 
@@ -72,17 +73,17 @@ export default class XYChartLayout {
       width,
       height,
       margin,
-      xScale: xEncoder.definition.scale,
-      yScale: yEncoder.definition.scale,
+      xScale: xEncoder.definition.scale || {},
+      yScale: yEncoder.definition.scale || {},
       theme,
       children,
     });
 
-    const { axis: yAxis } = yEncoder.definition;
-    if (isEnabled(yAxis)) {
+    if (typeof yEncoder.axis !== 'undefined') {
+      const { axis: yAxis } = yEncoder;
       this.yLayout = computeYAxisLayout({
-        orientation: yAxis.orient,
-        tickLabels: getTickLabels(yScale, yAxis),
+        orientation: yAxis.config.orient,
+        tickLabels: yAxis.getTickLabels(yScale),
         tickLength: theme.yTickStyles.length,
         tickTextStyle: theme.yTickStyles.label.right,
       });
@@ -91,13 +92,14 @@ export default class XYChartLayout {
     const secondMargin = this.yLayout ? mergeMargin(margin, this.yLayout.minMargin) : margin;
     const innerWidth = Math.max(width - secondMargin.left - secondMargin.right, minContentWidth);
 
-    const { axis: xAxis } = xEncoder.definition;
-    if (isEnabled(xAxis)) {
+    if (typeof xEncoder.axis !== 'undefined') {
+      const { axis: xAxis } = xEncoder;
+      const config = xAxis.config as XAxisConfig;
       this.xLayout = computeXAxisLayout({
         axisWidth: innerWidth,
-        orientation: xAxis.orient || 'bottom',
-        labelAngle: xAxis.labelAngle || this.recommendLabelAngle(xAxis.orient),
-        tickLabels: getTickLabels(xScale, xAxis),
+        orientation: config.orient || 'bottom',
+        labelAngle: config.labelAngle || this.recommendLabelAngle(config.orient),
+        tickLabels: xAxis.getTickLabels(xScale),
         tickLength: theme.xTickStyles.length,
         tickTextStyle: theme.xTickStyles.label.bottom,
       });
@@ -142,39 +144,39 @@ export default class XYChartLayout {
       <ChartFrame
         width={this.containerWidth}
         height={this.containerHeight}
-        contentWidth={this.containerWidth}
-        contentHeight={this.containerHeight}
+        contentWidth={this.chartWidth}
+        contentHeight={this.chartHeight}
         renderContent={renderChart}
       />
     );
   }
 
   createXAxis(props?: PlainObject) {
-    const { axis = {} } = this.spec.xEncoder;
+    const { axis } = this.spec.xEncoder;
 
-    return this.xLayout ? (
+    return axis && this.xLayout ? (
       <XAxis
-        label={axis.label}
+        label={axis.getTitle()}
         labelOffset={this.xLayout.labelOffset}
-        numTicks={axis.tickCount}
+        numTicks={axis.config.tickCount}
         orientation={this.xLayout.orientation}
         tickComponent={createTickComponent(this.xLayout)}
-        tickFormat={axis.tickFormat}
+        tickFormat={axis.getFormat()}
         {...props}
       />
     ) : null;
   }
 
   createYAxis(props?: PlainObject) {
-    const { axis = {} } = this.spec.yEncoder;
+    const { axis } = this.spec.yEncoder;
 
-    return this.yLayout ? (
+    return axis && this.yLayout ? (
       <YAxis
-        label={axis.label}
+        label={axis.getTitle()}
         labelOffset={this.yLayout.labelOffset}
-        numTicks={axis.tickCount}
+        numTicks={axis.config.tickCount}
         orientation={this.yLayout.orientation}
-        tickFormat={axis.tickFormat}
+        tickFormat={axis.getFormat()}
         {...props}
       />
     ) : null;

@@ -21,7 +21,6 @@ export default function createTickLabelProps({
     dy = orientation === 'top' ? -3 : 0;
   }
 
-  // This will render the tick as horizontal string.
   return {
     angle: rotation,
     dx,

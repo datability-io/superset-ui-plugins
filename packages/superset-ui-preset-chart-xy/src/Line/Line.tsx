@@ -32,8 +32,8 @@ import { groupBy, flatMap, uniqueId, values } from 'lodash';
 import createTooltip from './createTooltip';
 import XYChartLayout from '../utils/XYChartLayout';
 import WithLegend from '../components/WithLegend';
-import Encoder, { Encoding, Output } from './Encoder';
-import { Dataset, PlainObject } from '../encodeable/types/data';
+import Encoder, { Encoding, Outputs } from './Encoder';
+import { Dataset, PlainObject } from '../encodeable/types/Data';
 import ChartLegend from '../components/ChartLegend';
 
 chartTheme.gridStyles.stroke = '#f1f3f5';
@@ -56,15 +56,15 @@ type Props = {
 
 export interface Series {
   key: string;
-  color: Output['color'];
-  fill: Output['fill'];
-  strokeDasharray: Output['strokeDasharray'];
+  color: Outputs['color'];
+  fill: Outputs['fill'];
+  strokeDasharray: Outputs['strokeDasharray'];
   values: SeriesValue[];
 }
 
 export interface SeriesValue {
-  x: Output['x'];
-  y: Output['y'];
+  x: Outputs['x'];
+  y: Outputs['y'];
   data: PlainObject;
   parent: Series;
 }
@@ -174,8 +174,8 @@ class LineChart extends React.PureComponent<Props, {}> {
             width={chartDim.width}
             height={chartDim.height}
             ariaLabel="LineChart"
-            margin={layout.margin}
             eventTrigger="container"
+            margin={layout.margin}
             onMouseMove={onMouseMove}
             onMouseLeave={onMouseLeave}
             renderTooltip={null}
@@ -224,7 +224,7 @@ class LineChart extends React.PureComponent<Props, {}> {
         position="top"
         renderLegend={() => (
           // eslint-disable-next-line react/jsx-props-no-multi-spaces
-          <ChartLegend<Output, Encoding, Encoder> data={data} encoder={this.encoder} />
+          <ChartLegend<Outputs, Encoding, Encoder> data={data} encoder={this.encoder} />
         )}
         renderChart={parent => this.renderChart(parent)}
         hideLegend={!this.encoder.hasLegend()}

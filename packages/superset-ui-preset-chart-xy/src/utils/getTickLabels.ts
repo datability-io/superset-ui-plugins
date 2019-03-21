@@ -9,16 +9,18 @@ export default function getTickLabels(
   },
   axisConfig: {
     tickCount?: number;
-    tickValues?: string[] | number[];
-    tickFormat?: (x: string | number) => string;
+    values?: string[] | number[];
+    format?: (x: string | number) => string;
   },
 ) {
-  const { tickCount = 5, tickValues, tickFormat } = axisConfig;
-  let values = scale.ticks ? scale.ticks(tickCount) : scale.domain();
-  if (tickValues) values = tickValues;
+  const { tickCount = 5, values, format } = axisConfig;
 
-  let format = scale.tickFormat ? scale.tickFormat() : identity;
-  if (tickFormat) format = tickFormat;
+  let formatFn = scale.tickFormat ? scale.tickFormat() : identity;
+  if (format) formatFn = format;
 
-  return values.map(format);
+  if (values) {
+    return values.map(formatFn);
+  }
+
+  return (scale.ticks ? scale.ticks(tickCount) : scale.domain()).map(format);
 }
