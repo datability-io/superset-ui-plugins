@@ -45,17 +45,18 @@ export type MarkPropChannelDef<Output extends Value = Value> =
 
 export type TextChannelDef = TextFieldDef | ValueDef<string>;
 
-export type ChannelDef<Output extends Value = Value> =
+export type NonValueDef<Output extends Value = Value> =
   | XFieldDef<Output>
   | YFieldDef<Output>
   | MarkPropFieldDef<Output>
-  | TextFieldDef
-  | ValueDef<Output>;
+  | TextFieldDef;
+
+export type ChannelDef<Output extends Value = Value> = NonValueDef<Output> | ValueDef<Output>;
 
 export function isValueDef<Output extends Value>(
   channelDef: ChannelDef<Output>,
 ): channelDef is ValueDef<Output> {
-  return channelDef && 'value' in channelDef && !!channelDef.value;
+  return channelDef && 'value' in channelDef && typeof channelDef.value !== 'undefined';
 }
 
 export function isFieldDef<Output extends Value>(

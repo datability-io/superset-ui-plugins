@@ -25,9 +25,9 @@ export default class ChannelEncoder<Def extends ChannelDef<Output>, Output exten
   readonly options: ChannelOptions;
 
   protected readonly getValue: (datum: PlainObject) => Value;
-  readonly scale?: ScaleOrdinal<string, Output> | CategoricalColorScale | ((x: any) => Output);
   readonly encodeValue: (value: any) => Output;
   readonly formatValue: (value: any) => string;
+  readonly scale?: ScaleOrdinal<string, Output> | CategoricalColorScale | ((x: any) => Output);
   readonly axis?: AxisAgent<Def, Output>;
 
   constructor(name: string, definition: Def, options: ChannelOptions = {}) {
@@ -38,17 +38,19 @@ export default class ChannelEncoder<Def extends ChannelDef<Output>, Output exten
     this.getValue = extractGetter(definition);
     this.formatValue = extractFormatFromChannelDef(definition);
 
-    const scale = extractScale<Output>(definition, options.namespace);
-    this.scale = scale;
-    if (typeof scale === 'undefined') {
+    if (isValueDef(definition)) {
       this.encodeValue = identity;
-    } else if (scale instanceof CategoricalColorScale) {
-      this.encodeValue = (value: any) => scale(`${value}`);
     } else {
-      this.encodeValue = (value: any) => scale(value);
+      const scale = extractScale<Output>(definition, options.namespace);
+      if (scale instanceof CategoricalColorScale) {
+        this.encodeValue = (value: any) => scale(value);
+      } else {
+        this.encodeValue = (value: any) => scale(value);
+      }
+      this.scale = scale;
+      this.axis = extractAxis(this);
     }
 
-    this.axis = extractAxis(this);
     this.format = this.format.bind(this);
   }
 
