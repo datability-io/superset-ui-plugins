@@ -1,9 +1,9 @@
 import { CategoricalColorNamespace } from '@superset-ui/color';
 import { scaleOrdinal } from 'd3-scale';
 import { Value } from 'vega-lite/build/src/fielddef';
-import isEnabled from '../utils/isEnabled';
 import { isPositionFieldDef, NonValueDef } from '../types/FieldDef';
 import identity from '../utils/identity';
+import isEnabled from '../utils/isEnabled';
 
 export default function extractScale<Output extends Value = Value>(
   definition: NonValueDef<Output>,
