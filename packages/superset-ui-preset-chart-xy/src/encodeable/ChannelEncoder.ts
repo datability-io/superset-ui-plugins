@@ -8,19 +8,19 @@ import {
   isValueDef,
   isFieldDef,
   isNonValueDef,
+  isPositionFieldDef,
 } from './types/FieldDef';
 import { PlainObject } from './types/Data';
 import extractScale from './parsers/extractScale';
 import extractGetter from './parsers/extractGetter';
 import { extractFormatFromChannelDef } from './parsers/extractFormat';
-import extractAxis from './parsers/extractAxis';
 import isEnabled from './utils/isEnabled';
 import isDisabled from './utils/isDisabled';
 import { ChannelOptions, ChannelType } from './types/Channel';
 import identity from './utils/identity';
 import AxisAgent from './AxisAgent';
 
-export default class ChannelEncoder<Def extends ChannelDef<Output>, Output extends Value> {
+export default class ChannelEncoder<Def extends ChannelDef<Output>, Output extends Value = Value> {
   readonly name: string | Symbol | number;
   readonly type: ChannelType;
   readonly definition: Def;
@@ -59,18 +59,12 @@ export default class ChannelEncoder<Def extends ChannelDef<Output>, Output exten
         this.encodeValue = (value: any) => scale(value);
       }
       this.scale = scale;
-      this.axis = extractAxis(this);
+      this.axis = this.extractAxis();
     } else {
       this.encodeValue = identity;
     }
 
     this.format = this.format.bind(this);
-  }
-
-  get(datum: PlainObject, otherwise?: any) {
-    const value = this.getValue(datum);
-
-    return otherwise !== undefined && (value === null || value === undefined) ? otherwise : value;
   }
 
   encode(datum: PlainObject, otherwise?: Output) {
@@ -81,8 +75,20 @@ export default class ChannelEncoder<Def extends ChannelDef<Output>, Output exten
       : output;
   }
 
+  private extractAxis() {
+    return this.isXY() && isPositionFieldDef(this.definition) && isEnabled(this.definition.axis)
+      ? new AxisAgent<Def, Output>(this, this.definition)
+      : undefined;
+  }
+
   format(datum: PlainObject): string {
     return this.formatValue(this.get(datum));
+  }
+
+  get(datum: PlainObject, otherwise?: any) {
+    const value = this.getValue(datum);
+
+    return otherwise !== undefined && (value === null || value === undefined) ? otherwise : value;
   }
 
   getTitle() {
@@ -94,13 +100,7 @@ export default class ChannelEncoder<Def extends ChannelDef<Output>, Output exten
   }
 
   hasLegend() {
-    if (isDisabled(this.options.legend)) {
-      return false;
-    }
-    if (this.type === 'X' || this.type === 'Y') {
-      return false;
-    }
-    if (isValueDef(this.definition)) {
+    if (isDisabled(this.options.legend) || this.isXY() || isValueDef(this.definition)) {
       return false;
     }
     if (isMarkPropFieldDef(this.definition)) {
@@ -108,5 +108,9 @@ export default class ChannelEncoder<Def extends ChannelDef<Output>, Output exten
     }
 
     return isScaleFieldDef(this.definition);
+  }
+
+  isXY() {
+    return this.type === 'X' || this.type === 'Y';
   }
 }

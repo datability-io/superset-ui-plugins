@@ -13,7 +13,7 @@ export default function extractAxis<Def extends ChannelDef<Output>, Output exten
   channel: ChannelEncoder<Def, Output>,
 ) {
   if (
-    (channel.type === 'X' || channel.type === 'Y') &&
+    channel.isXY() &&
     isPositionFieldDef(channel.definition) &&
     isAxisEnabled(channel.definition.axis)
   ) {
