@@ -5,10 +5,6 @@ import AxisAgent from '../AxisAgent';
 import ChannelEncoder from '../ChannelEncoder';
 import isEnabled from '../utils/isEnabled';
 
-export function isXYChannel(channelName: string) {
-  return channelName === 'x' || channelName === 'y';
-}
-
 function isAxisEnabled(axis: any): axis is Axis {
   return isEnabled(axis);
 }
@@ -17,7 +13,7 @@ export default function extractAxis<Def extends ChannelDef<Output>, Output exten
   channel: ChannelEncoder<Def, Output>,
 ) {
   if (
-    isXYChannel(channel.name) &&
+    (channel.type === 'X' || channel.type === 'Y') &&
     isPositionFieldDef(channel.definition) &&
     isAxisEnabled(channel.definition.axis)
   ) {

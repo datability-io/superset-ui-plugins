@@ -7,20 +7,22 @@ import {
   isMarkPropFieldDef,
   isValueDef,
   isFieldDef,
+  isNonValueDef,
 } from './types/FieldDef';
 import { PlainObject } from './types/Data';
 import extractScale from './parsers/extractScale';
 import extractGetter from './parsers/extractGetter';
 import { extractFormatFromChannelDef } from './parsers/extractFormat';
-import extractAxis, { isXYChannel } from './parsers/extractAxis';
+import extractAxis from './parsers/extractAxis';
 import isEnabled from './utils/isEnabled';
 import isDisabled from './utils/isDisabled';
-import { ChannelOptions } from './types/Channel';
+import { ChannelOptions, ChannelType } from './types/Channel';
 import identity from './utils/identity';
 import AxisAgent from './AxisAgent';
 
-export default class ChannelEncoder<Def extends ChannelDef<Output>, Output extends Value = Value> {
-  readonly name: string;
+export default class ChannelEncoder<Def extends ChannelDef<Output>, Output extends Value> {
+  readonly name: string | Symbol | number;
+  readonly type: ChannelType;
   readonly definition: Def;
   readonly options: ChannelOptions;
 
@@ -30,17 +32,26 @@ export default class ChannelEncoder<Def extends ChannelDef<Output>, Output exten
   readonly scale?: ScaleOrdinal<string, Output> | CategoricalColorScale | ((x: any) => Output);
   readonly axis?: AxisAgent<Def, Output>;
 
-  constructor(name: string, definition: Def, options: ChannelOptions = {}) {
+  constructor({
+    name,
+    type,
+    definition,
+    options = {},
+  }: {
+    name: string | Symbol | number;
+    type: ChannelType;
+    definition: Def;
+    options?: ChannelOptions;
+  }) {
     this.name = name;
+    this.type = type;
     this.definition = definition;
     this.options = options;
 
     this.getValue = extractGetter(definition);
     this.formatValue = extractFormatFromChannelDef(definition);
 
-    if (isValueDef(definition)) {
-      this.encodeValue = identity;
-    } else {
+    if (isNonValueDef(definition)) {
       const scale = extractScale<Output>(definition, options.namespace);
       if (scale instanceof CategoricalColorScale) {
         this.encodeValue = (value: any) => scale(value);
@@ -49,6 +60,8 @@ export default class ChannelEncoder<Def extends ChannelDef<Output>, Output exten
       }
       this.scale = scale;
       this.axis = extractAxis(this);
+    } else {
+      this.encodeValue = identity;
     }
 
     this.format = this.format.bind(this);
@@ -84,7 +97,7 @@ export default class ChannelEncoder<Def extends ChannelDef<Output>, Output exten
     if (isDisabled(this.options.legend)) {
       return false;
     }
-    if (isXYChannel(this.name)) {
+    if (this.type === 'X' || this.type === 'Y') {
       return false;
     }
     if (isValueDef(this.definition)) {
